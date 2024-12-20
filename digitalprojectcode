@@ -9,23 +9,21 @@ pixel_pin = board.D5
 num_pixels = 16    
 pixels = neopixel.NeoPixel(pixel_pin, num_pixels, brightness=0.6, auto_write=False)
 
+#microphone
 mic = audiobusio.PDMIn(board.TX, board.D12, sample_rate=16000, bit_depth=16)
 samples = array.array("H", [0] * 320) 
 
-# Helper functions
+
 def mean(values):
-    """Calculates the mean of the values."""
     return sum(values) / len(values)
 
 def normalized_rms(values):
-    """Removes DC bias and computes the Root Mean Square (RMS) of the signal."""
     minbuf = int(mean(values))
     samples_sum = sum(float(sample - minbuf) * (sample - minbuf) for sample in values)
     return math.sqrt(samples_sum / len(values))
 
+#sound levels to colors
 def sound_to_color(level):
-    """
-    Maps sound levels to colors.
     - Quiet (level < 1000): Blue
     - Normal (1000 <= level < 3000): Green
     - Loud (level >= 3000): Red
@@ -37,25 +35,25 @@ def sound_to_color(level):
     else:  # Loud
         return (255, 0, 0)  # Red
 
-# Main loop
+# main part of code
 while True:
-    # Record sound samples
+  #record from microphone
     mic.record(samples, len(samples))
     magnitude = normalized_rms(samples)
 
-    # Scale sound intensity to number of LEDs
+    # sound intensity to number of LEDs
     scaled_level = int(magnitude / 200)
     if scaled_level > num_pixels:
         scaled_level = num_pixels
 
-    # Get color based on sound level
+    # find color according to sound
     color = sound_to_color(magnitude)
 
-    # Light up LEDs with the determined color
+    # light up the leds with that color
     for i in range(scaled_level):
         pixels[i] = color
     pixels.show()
 
-    # Brief delay and clear LEDs
+    # clear the leds after 0.05 seconds
     time.sleep(0.05)
     pixels.fill((0, 0, 0))
